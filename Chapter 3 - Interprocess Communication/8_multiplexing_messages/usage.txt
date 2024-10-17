@@ -1,0 +1,5 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  This will create two executables: `./client` and `./server`.
+      More information about the functionality is provided in the source file.
+  ->  To remove the executable, run the `make clean` command.
