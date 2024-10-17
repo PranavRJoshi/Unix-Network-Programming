@@ -1,0 +1,12 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  There will be two executables: `./fifo_client` and `./fifo_server`
+      
+      NOTE: By default, the executables mentioned above is created, but we can 
+      also create a single executable using the `make main` command.
+
+      The source file contains the detail functionality of the program.
+
+  ->  To remove the executables:
+      1. If the default `make` is used, use the `make clean` command.
+      2. If `make main` command is used, use the `make cleanmain` command.
