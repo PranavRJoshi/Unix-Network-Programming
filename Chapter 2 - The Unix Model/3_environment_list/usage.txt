@@ -1,0 +1,11 @@
+To run the program:
+  ->  To prepare the executable, run the `make` command.
+  ->  To check the environment variable of the executable by either using 
+      `./environ` or `./environ2`.
+      The programs are equivalent, except for the fact that `./environ` has the 
+      `envp` variable declared as the function parameter of main, while `./environ2`
+      uses the external variable defined by the startup function which calls main to 
+      execute the process.
+
+      The programs can accept arguments in the executables.
+  ->  To remove the executable, run the `make clean` command.
