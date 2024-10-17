@@ -1,0 +1,11 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  There will be two executables: `./client` and `./server`.
+      As with other client-server programs in this chapter, the client
+      takes in the name of the file from the standard input, which is 
+      processed by the server and the content of the file is provided back 
+      to the client, which is written to the standard output.
+
+      This program utilizes the multiple-buffer technique to replicate the
+      asynchoronous reading of the file.
+  ->  To remove the executable, run the `make clean` command.
