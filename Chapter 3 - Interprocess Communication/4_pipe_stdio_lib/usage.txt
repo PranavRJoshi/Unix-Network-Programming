@@ -1,0 +1,7 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  This will create an executable `./popenclose`. 
+
+      More information about the usage of the program is provided in the 
+      source file.
+  ->  To remove the executable, run the `make clean` command.
