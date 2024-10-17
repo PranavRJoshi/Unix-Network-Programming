@@ -1,0 +1,6 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  This will create an executable `./main`. 
+
+      More information about the program and its functionality is provided in the source file.
+  ->  To remove the executable, run the `make clean` command.
