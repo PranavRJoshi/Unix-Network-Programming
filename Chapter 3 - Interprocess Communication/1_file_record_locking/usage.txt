@@ -1,0 +1,13 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  Run the `./file_record` executable.
+      
+      The executable utilizes the locks from the `lock.c` file,
+      which contains five different methods of file locking.
+
+      You can modify the program by using different forms of 
+      lock in the "file_record.c" where the lock is used.
+
+      Refer to "lock.c" file to learn about different forms of 
+      locking.
+  ->  To remove the executable, run the `make clean` command.
