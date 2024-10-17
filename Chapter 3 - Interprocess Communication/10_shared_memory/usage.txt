@@ -1,0 +1,14 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  There will be two executables, `./client` and `./server`.
+      `./server` is run first. Whilst the server is up, the client 
+      is run using `./client`. The client is expected to provide the 
+      name of the file whose content is to be written in the standard 
+      output.
+
+      This code implements the shared memory technique, along with 
+      semaphores as a synchronization mechanism.
+      
+      The code contains explaination as to how it functions. Refer to 
+      the source file.
+  ->  To remove the executable, run the `make clean` command.
