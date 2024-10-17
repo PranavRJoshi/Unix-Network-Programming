@@ -1,0 +1,4 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  Run the executable `./pipe`.
+  ->  To remove the program, use the `make clean` command.
