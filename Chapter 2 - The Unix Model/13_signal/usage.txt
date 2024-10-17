@@ -1,0 +1,5 @@
+To run the program:
+  ->  Prepare the executable using the `make` command in the current working directory.
+  ->  This will make two executables, `./signal` and `./signal2`
+  ->  To clean, run `make clean`
+
