@@ -1,0 +1,9 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  The executables prepared are `./file` and `./typeof_file`.
+      `./file` will provide the stats of the source file "file.c", while
+      `./typeof_file` will take in the program argument and checks the type of 
+      file: regular, directory, character, block, etc. For instance, by running
+      `./typeof_file file.c`, it will return what type of file is `file.c`, which 
+      is regular in this case.
+  ->  To remove the executable, run the `make clean` command.
