@@ -1,0 +1,9 @@
+To run the program:
+  ->  Prepare the executable using the `make` command.
+  ->  This will create an executable `./main`, whose functionality is described 
+      briefly in the source file. 
+
+      NOTE: The `pitfalls` directory contains code that illustrate the problems with
+      using semaphores without any precautions. Check the source files in that directory
+      to learn more about the danger of not using semaphores properly.
+  ->  To remove the executable, run the `make clean` command.
