@@ -1,0 +1,9 @@
+Before traversing this directory, make sure that this directory was made to document the way the function described in the text works.
+The three utility routines: readn, writen, and readline, are used by many applications in the text later on.
+The directory connection{less|_oriented}_{client|server} contains the source code for a basic `echo` function. This, like the previous one, is used for documentation purpose.
+
+The reason for doing this rather than making an executable straight from the function described is cause building them is difficult (for me) when having files in different directories.
+
+For now, the only executable will be stored in the directory `../tcp` and `../udp`, illustrating the connection_oriented client/server as well as connectionless client/server respectively.
+
+One final thing, the files in the directory `../tcp` and `../udp` lacks documentation. Rather, all the working of the code can be found in the files that are in this directory `./utility_routines/...`. This is to make sure that documentation does not clutter the code everywhere. Also, function such as `err_dump` and `err_sys` which are used in the text are not used here, it is replaced with `perror` and `exit`.
