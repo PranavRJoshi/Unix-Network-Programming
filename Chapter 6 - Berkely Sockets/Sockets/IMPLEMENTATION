@@ -1,0 +1,34 @@
+Here is the implementation guide for this project directory.
+
+Apart from the `./send_recv/` and `./utility_routines/` directory as well as the files in the current directory `./`, there are five directories which has the similar working, in that they use the utility functons such as: `{str|dg}_echo`, `{str|dg}_cli`, `readline`, `writen`. Although the source for `readn` function is also present, we use the `readline` functions although it uses the `read` system call to read 1 byte every time! Talk about slowing down your program :(
+
+In essence, the servers uses the function with suffix `_echo`, while the clients use the function with suffix `_cli`. If you take a good look into the source, you'll observe that what the server essentially does is, call the echo function passing the socket descriptor which is binded to the server's address. The echo function (for stream socket) also calls the `readline` function first. Before moving forward, let's look at the function signature:
+
+  void str_echo (int sockfd);
+  void dg_echo  (int sockfd, struct sockaddr *pcli_addr, int maxclilen);
+
+Notice that stream socket requires less argument as compared to the datagram socket. This is because the stream socket will previoulsy have a connection established with the client through the `accept` system call (`accept` system call returns a new socket descriptor which contains the full 5-tuple connection association elements). `dg_echo`, on the other hand relies on first receiving any message from the server socket--message sent by a client to the server--and then working on that message, which is just `echo`ing back the message back to the client. 
+
+As the stream socket is easier, let's cover it up first. It uses the `readline` function to read the line--or more precisely, data--from the socket, and stores it in the buffer, which is the second argument to the `readline` function. The third argument to the readline function provides the max characters that the function should read. Also, the function returns 0 if there is no data in the socket to be read. The function also returns when there are no more data to be read, which may be less than the third argument specified. The buffer where the data is stored is a C string, meaning that the buffer ends with a null `/0` character. The `readline` function returns the number of bytes read. After the data has been read from the socket, the same data which was read from the socket, is written back! I know, sounds weird. But while the `writen` function writes to the socket, it is essentially writing to the socket so that the client can later read it and write it back to the standard output.
+
+As for the datagram socket, We see that no user-defined function for reading and writing is used. System calls such as `recvfrom` and `sendto` are used, whose function signatures are as follows:
+
+  ssize_t recvfrom(int socket, void *restrict buffer, size_t length, int flags, struct sockaddr *restrict address, socklen_t *restrict address_len);
+  ssize_t sendto(int socket, const void *buffer, size_t length, int flags, const struct sockaddr *dest_addr, socklen_t dest_len);
+
+Realize that the function signature is pulled from the manual on my system, so there may be some changes on your system. The last two arguements for the `recvfrom` and `sendto` function deals with the actual network address structure. In the case of `recvfrom`, this is a "value-result" arguments, meaning that the last two arguments, if provided non-NULL, fills the information of the network address of the client which sent the data to the server. In case of `sendto`, these arguments represent the receiving client's network address. 
+
+One could also read it as:
+  recvfrom: receive from the socket descriptor `socket`,  and store the data in `buffer`, which has size of `length`, with `flags` for the data to be received (like Out Of Band (OOB) data, or PEEK, etc...), and store the sender's network address in `address`, whose network address size is of length `address_len`.
+  sendto: send to the socket descriptor `socket`, where the data to be sent is located at `buffer` whose length is `length`. The data may have flag `flag`, which may be indicate Out Of Band data (OOB), Don't Route (DONTROUTE), etc. The destination where the data is to be sent is `dest_addr`, whose network address size is `dest_len` long.
+
+Moving onto actual functionality of `{str|dg}_cli`. First, let's look at the function signature:
+
+  void str_cli (register FILE *fp, register int sockfd);
+  void dg_cli (FILE *fp, int sockfd, struct sockaddr *pserv_addr, int servlen);
+
+Let's look at `str_cli` for now. What this function does is, take the FILE pointer as the first argument, which is `stdin` or the standard input in our case. The function uses `fgets` function to fetch the data from and store it in some local buffer. The data read (from the standard input in our case) is then stored in a buffer whose length is determined. The read data is sent to the socket using the `writen` function, which writes data to the socket. Realize that the socket descriptor where we are writing the data is the one which has been previously `connect`ed with the server socket. The function also contains the `readline` function, which is responsible for reading the data from the socket. In this example, since we are making an "echo" server, the server will send back the same data which it recevied. The received data is sent to the `stdout` or standard output using the `fputs` function. 
+
+Moving on to `dg_cli`, like `str_cli`, we first take input from the standard input or `stdin`. Realize that fgets function will terminate when it encounters the newline character. After reading the data from the user (through standard input), the `sendto` system call is used to send the data to the server, where the server address and the length of the server address is already passed to the `dg_cli` function. We also use the `recvfrom` system call to receive any data sent by the server. I won't stress much about these calls here as they have already been described above. 
+
+Also, I'm not mentioning other source code from the file as they are used to establish connection and the likes. If you like to have a more thorough read on the working of reading/writing of client, refer to the files in `./utility_routines/` directory. `./send_recv/` directory contains source for the `send/recv` system calls for connection-oriented sockets, whereas `sento/recvfrom` system calls for connectionless sockets.

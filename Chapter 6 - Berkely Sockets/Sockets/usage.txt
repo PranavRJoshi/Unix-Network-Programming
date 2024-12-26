@@ -1,0 +1,70 @@
+Make sure to read the comments in the files. 
+The files were wriiten in the sequence:
+1. sockaddr.c 
+    ->  init:   made for creating a connectionless socket with the address family of Internet using UDP for transport layer. Also acts 
+                as a "client" while `bind.c` acts as its "server". Was initially made to showcase the `sockaddr` structure.
+    ->  feat_1: add conditional compilation to support creating a connection-oriented socket using _CHECK_TCP macro.
+    ->  feat_2: add support to send simple message over the socket (both UDP and TCP) using `read` and `write` system calls.
+2. bind.c
+    ->  init:   made for demonstrating the `bind` system call. Since servers require the `bind` system call to "name" the socket 
+                descriptor, we bind the socket defined by the process to assert that we want the packets to be delivered to the 
+                current process whose "delivery" address and process (port) corresponds to the one defined in the socket address 
+                for that respective socket descriptor.
+                Also was initially created to make a connectionless server, using address similar to the one in `sockaddr.c`,
+                which utilizes the UDP transport layer protocol.
+    ->  feat_1: add conditional compilation similar to `sockaddr.c`--_CHECK_TCP, to check its usage as a TCP server. Unlike UDP,
+                which does not require the server to be passive-open for the client to be able to connect, TCP requires that there 
+                already is a server running before the client attempts to connect to that server, so it was more of a testing feature 
+                for the changes done in `sockaddr.c`.
+                Added the use of `listen` system call as well, which is described more in the source file.
+    ->  feat_2: add support to receive message over the socket (both UDP and TCP), similar to `sockaddr.c`. Described in the source file.
+    ->  feat_3: add logging to show the half association--from the 5-tuple association--of the client when the client connects to the 
+                server.
+
+
+Some footnote:
+
+1. We don't really mention the use of "raw" sockets. Raw sockets are powerful, in that they don't have any transport layer protocol (TCP/UDP) headers attached to them by default. These raw sockets only use the Internet Protocol (IP) and can be used for making custom transport layer protocols which can later be utilized by the application programs which uses the "custom" transport layer protocol over IP.
+
+2. As the XNS APIs are not shipped by most modern Unix-like systems, for educational purposes only, make sure to define the structure yourself (such as `struct sockaddr_ns`, `union ns_host`, `union ns_net`, `struct ns_addr`). For now, I will use the one described in the text asfollows:
+    ```
+    union ns_host {
+      unsigned char   c_host[6];    /* hostid addr as six bytes */
+      unsigned short  s_host[3];    /* hostid addr as three 16-bits shorts */ 
+                                    /* network byte ordered */
+    };
+
+    union ns_net {
+      unsigned char   c_net[4];     /* netid as four bytes */
+      unsigned short  s_net[2];     /* netid as two 16-bits shorts */ 
+                                    /* network byte ordered */
+    };
+
+    struct ns_addr {
+      union ns_net    x_net;        /* 4-byte netid */
+      union ns_host   x_host;       /* 6-byte hostid */
+      unsigned short  x_port;       /* 2-byte port (XNS "socket") */
+                                    /* network byte ordered */
+    };
+
+    struct sockaddr_ns {
+      unsigned short  sns_family;   /* Address Family, AF_NS */
+      struct ns_addr  sns_addr;     /* the 12-bytes XNS address */
+      char            zero[2];      /* unused, generic `struct sockaddr` is 16-bytes */
+    };
+
+    #define   sns_port    sns_addr.x_port       /* process port being used, simple macro */
+    ```
+
+    This is not enough tho, as the socket descriptor, during its creation requires the protocol argument specified as well. For Internet,
+    we used the `IPPROTO_` prefix to denote that the socket uses IP underneath for communication (in the network layer). In the text,
+    there is `NSPROTO_` prefix for XNS family of protocols, but since it is defined in <netns/ns.h> which is not available, we will 
+    have to resort to using `IPPROTO_RAW` (whose value is 255) for now. It is fundamentally not correct, as XNS uses Internet Datagram 
+    Protocol (IDP) for the network layer for converting the message into packets. The lack of vendors shipping the APIs for XNS is the 
+    reason we have to resort to this rather risky alternative.
+
+    After some web surfing, I found this repo which contains the header definition of <netns/ns.h>, whose link is given below:
+
+    1. https://github.com/kame/kame/blob/2ef74fe29e4cca9b4a87a1d5041191a9e2e8be30/freebsd5/sys/netns/ns.h
+
+3.
