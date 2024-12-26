@@ -1,0 +1,68 @@
+This is a collection of program fragments that were showcased in the text, which I have tried to recreate into a working program.
+
+The order is not source file specific, meaning, I'll go straight starting from the `main` function and dig deeper as we observe other user defined functions. The following things happen:
+
+1.  When we first start the main program (found in `mycat.c`), we assign `pname` with the process name, which is `./mycat`. Notice that `argv` is incremented (postfix) while `argc` is decremented (postfix). For anyone who doesn't really get how these variables work, when the `main` function is defined with parameters `argc` and `argv`, the program file can take in arguments during execution. `argc` will always be 1, even when no argument is provided. The first argument is always the name of the program. Also, think of `argc` as "argument count" and `argv` as "argument value". Incrementing `argv` means argv will point to the first argument of the program file, not the pointer to the name of the program. Likewise, decrementing `argc` means it will show only the number of arguments (beside program name) given to the program.
+
+2.  In the `do-while` loop, we observe that an if statement is being used. The `if` statement first checks if `argc` is greater than 0, and from the short-circuiting nature of `&&` operator, if the expression is false, the next expression is not determined as 0 && X is 0 (X means don't care, could be 0 or 1). `argc` will only be less than or equal to 0 when we don't provide any argument to the program. 
+  
+  But in the scenario that we *do* provide arguments to the program executable, then the next expression is evaluated. The next expression attempts to assign the return value from the function `my_open` to the variable `fd`, and it MUST be greater than 0, else the block inside `if` statement is executed.
+
+3.  We will consider the scenario when an argument, say `/etc/passwd` is provided to the program executable. Realize that the program is built to support multiple arguments, which is why we use another variable, `i`, to act as index for `argv`. We'll focus on the functionality of `my_open` for now.
+
+  The source for `my_open` can be found in `my_open.c` file. We declare the variables that will be used later. The reason we declare variables at the start of the function is due to limitations of C89. Anyways, first the `s_pipe` function is called. The function definition for it can be found in `s_pipe.c` file. But this is a simple function. All this function does is, call the `socketpair` system call, with socket of type `SOCK_STREAM`, and domain of `AF_UNIX`. The protocol is not specified, as it is not much of our concern. For curious readers, refer to `protocols (5)` and/or look up to the file `/etc/protocols`. 
+
+  The argument provided to `s_pipe` will hold the two socket descriptors after successful call to `socketpair` system call. Note that we created "unnamed" stream pipes.
+
+  Next, `fork` is called to fork the process (which is still `./mycat`), and the parent process is `wait`ed till the child process completes. What the child process first does is `close` one of the socket descriptor (element 0 to be precise) and `snprintf`s: first element of socket descriptor (element 1) to the argument argsfd, and mode (which is 0 when `my_open` is called) to the variable `argsmode` variable. 
+
+  The child process does `execl` system call which, in general, takes the first argument as the path to the executable, rest of the arguments are the optional arguments that the executable may use (this program uses all the arguments tho, duh). One thing to keep in mind is that the program fragment in the text had the second argument to `execl` as "openfile", while the one I wrote has "./openfile". This was modified to get rid of error which occurred when calling the `execl` function. I'm not entirely sure, but one guess I could make is that the author had the `PATH` environment set up to look up for executable "openfile", hence using "./openfile" is not required. For my case, this is not true, as my PATH variable does not check the directory where the source file for this program resides. Before moving on, we first look up what "./openfile" program does.
+
+  One last thing, the sequence of arguments passed to `./openfile` are: 
+
+      1. argv[0] = "./openfile"
+      2. argv[1] = "<file descriptor: sfd[1]>"
+      3. argv[2] = "<file name: first arg to `my_open`>"
+      4. argv[3] = "<mode: second arg to `my_open`>"
+
+  Hence, the `argc` for `./openfile` will be 4.
+
+4.  The `./openfile` executable, which is made from the source file `openfile.c`. The program (./openfile) will first check if the `argc` value is 4 or not. If it isn't the program terminates. Also, the `pname` variable--declared as `extern` in `err_routine.h`--is assigned the program name, argv[0]. 
+
+  Notice that `open` system call is used to open up `argv[2]` file in `argv[3]` mode and the return value to this call is assigned to the variable `fd`. Check the corresponding `argv` values from above. argv[3] is converted to an integer using `atoi`, which I think stands for "ASCII to Interger". This is done as the second argument to `open` expects an integer variable. 
+
+  Finally, the program (./openfile) `exit`s with the argument as a return value of `my_sendfile`. This function expects two arguments, which are provided as: `atoi(argv[1])` and `fd`. Realize that argv[1] is the file descriptor `sfd[1]`, but was in string format, so `atoi` was used, and fd was the file descriptor of the file that was to be opened to be read. Before we even look at the function definition of `my_sendfile`, we can make some educated guess that all this function does is, pass the file descriptor `fd` through the socket descriptor `sfd[1]`. Let's look at the `my_sendfile` function now.
+
+5. NOTE: I recommend the reader to check out the file (`send_recv_file.c`) as it is different as compared to the one showed in the text. The change is documented within the source file, and it shows the changes made from text to make the program work on newer machines. The basic gist is that some of the members for `struct msghdr` is not present on newer machines, so there was some workarounds to make the program function as intended.
+
+  The `my_sendfile` function contains two parameters: `sockfd` and `fd`. There are some chores to be done, such as creating a `control` character array with size of `struct cmsghdr` in addition to the size of an integer (check the `CMSG_SPACE` parameterized macro). Then we set all the bits of `control` variable to 0.
+
+  Notice the `struct iovec` array `iov[1]`. Recall that for `scatter read and gather write`, we don't use normal variables, rather these structures. I've done extensive documentation for these, as well as created an emulation for `readv` and `writev` which uses these structures as arguments (declared my own type definition and structure for `struct iovec` as well). To read more about it, check out the `../6.syscalls/non_contigious_io/` directory, as well as the IMPLEMENTATION file in the `../6.syscalls/` directory.
+
+  The `struct msghdr` contains many elements, most are not of our issue right now. we declared a variable called `msg` of this structure tag type. We see that we have assigned some values to the members of this structure variable. Again, check out `send_recv_file.c` to see what the assignments are, and what they signify.  
+
+  The main thing to notice is that the we are passing the file descriptor (obtained from the `open` call in `./openfile`) using the `CMSG_DATA` parameterized macro. Maybe I'll go into the details later, but for now, just understand that we are passing the file descriptor through the `control` variable. We then use the `sendmsg` system call to send the message content from `msg` variable to the socket `sockfd` and no flags provided. For now, we consider that this call will pass, hence returning 0. 
+
+6. The return from `my_sendfile` is sent to `./openfile` process which is being run by the child process of `./mycat`. After the return from `my_sendfile`, the `execl` call finishes as the `./openfile` `exit`s with return value of `my_sendfile`. 
+
+  We have now returned to `my_open` function, where the parent process was waiting for the child process to finish (which is the case now). 
+
+  After `wait`ing, we observe some bitwise operation done to the argument to `wait` system call (which is `status`). We will not take this into account for now. We will check the scenario of when `status` is 0 for now. The `fd` variable declared in `my_open.c` is assigned the return value from `my_recvfile`, which is called with `sfd[0]` as the argument. Recall that `my_sendfile` uses `sfd[1]` as the socket where the `open`ed file descriptor `fd` was passed.
+
+7.  Looking into `my_recvfile`, which is defined in `send_recv_file.c`, we observe that what it does is, initialize the `control` "bytes" and set up the `struct msghdr` variable `msg` which will hold the contents when calling the `recvmsg` system call. Similar to `sendmsg`--where the second argument to the system call, a variable of type `struct msghdr`, is the content that is to be sent to the socket descriptor--the `recvmsg` system call fetches the message from the socket descriptor provided and stores the content in the second argument to the system call `recvmsg`. 
+
+  MISC. Okay, So I do know that the stream pipes are bidirectional, meaning the pipe can be used for both reading and writing. Recall that `pipe` system call returns two descriptors, one for reading only `fd[0]`, and the other for writing only `fd[1]` (hence called unidirectional). But I wasn't sure if the two descriptors made by `socketpair` can be used for both reading and writing, irregardless of the which descriptor was written and which is being read. 
+
+    Anyways, since we sent the open file descriptor using `sendmsg` previously (by the child process), the same file descriptor will be obtained using the `recvmsg` (by the parent process). There is some chore needed to be done, for verifying the control message header and if it is able to pass file descriptor to other processes (SCM_RIGHTS), we then return the open file descriptor from the `my_recvfile` call. 
+
+8. The return value from `my_open` function is `fd`, which was assingned the value returned from the call to `my_recvfile`, which returns the open file descriptor. 
+
+  We have now reached back to the `./mycat` main program. Recall that the return value from `my_open` was assigned to the variable `fd` in `mycat.c` file. 
+
+  After the call, the `read` system call is used to read the content from `fd`. The content read is stored to the buffer `buff`. Notice that the call can only read atmost `BUFFSIZE` bytes of data from `fd`. This operation is used as the condition for `while` loop, where the loop remains as long as read returns a value greater than 0. Realize that read returns 0 when there is nothing to be read from the given descriptor, or -1 if any error occurred (check return values section of read (2)). 
+
+  The stored content in `buff` is used in `write` system call, where it is written to the standard output. 
+
+  In case read returns -1, the error is printed and the process `./mycat` is terminated.
+
+9. After all these works, the `do-while` loop checks if argc is greater than `pre-increment` value of `i`.
