@@ -1,0 +1,45 @@
+So, this directory contains a simple program used to illustrate most of the "advanced" socket system calls that were discussed in the text.
+This file contains the steps that are taken by the program, which I will try to document in a sequential order.
+Take notice that only the `server.c` and `client.c` file are being used here. Other files provides utility functions required by the main files.
+
+First we will observe what the `server.c` program actually does:
+
+1. First we do some basic chores, like zeroing out the structure which will hold the network address and the port number. After initializing the structure, we need to create a socket to associate that respective network address and port number with, which is done using the `bind` system call. Also, note that we use the `INADDR_ANY` to denote the network address. This tells the system to listen to any available network interface which supports the Internet. We also make the socket `listen` atmost five (5) clients.
+
+2. To showcase the use of `getsockname`, we declare the variables which will hold the network address and port number. Realize that this done to only show the use of the system call `getsockname`, while the same information can be obtained through the structure which was used to `bind` the socket with.
+
+3. We also declare the variables required to hold the client's information, such as the client's network address and the port number which the client has used to connect to the server. 
+
+4. This server is a concurrent one. We can see that as we `fork` the process and pass the `accept`ed socket to the child process to serve the client. The child process need to have access to the socket which is used to `accept` the client, hence we `close` it. We also demonstrate the use of `shutdown` in the coming points.
+
+5. Before `fork`ing, we create structure used to store the peer (client) information. Almost most of the network system call requires the caller to specify the length of the structure. This is to make sure that the structure's size is known (or will be determined if the function contains a value-result argument) as UNIX domain name can have more than 16 bytes of space (typically, network address structures contains 16 bytes, except for UNIX domain which contains ~104 bytes).
+
+6. After the fork has been done, we see the use of `getpeername`, which requires that the socket provided as argument must have a 5-tuple association. Be aware that a socket has 5-tuple association only after a successful call to `accept` for server and `connect` for client. The rest of the argument are value-result argument, so these arguments are filled with information such as the network address and the port number along with the size of the structure. Note that the manual on my machine states that the structure length be initialized before passing it to the `getpeername` system call.
+
+7. After all that, we see that we have used the structure of tag `header_format`, which is used as my custom header. There also is an optional `dummy_message` variable used to hold the (optional) message the client have sent us.
+
+8. We now have reached the use case of `readv` system call, which is a form of non-contiguous buffer used for `read`ing from the respective socket (or file) descriptor. `readv` does the "scatter read", which essentially `read`s the content from the socket descriptor, stores the content in the buffer.
+
+9. Before moving on, let's discuss how the buffer(s) are filled. The second argument to `readv` is a pointer to a structure with tag `iovec`, which has two members: `iov_base` and `iov_len`. `iov_base` is a pointer to void data type. For simplicity, we will assume that `iov_base` is a pointer to char. The second member, `iov_len` is used to describe the size of the content pointed to by `iov_base`. As the second argument to `readv` requires a *pointer* to `struct iovec`, the caller needs to specify how many `struct iovec` elements we will pass to the system call `readv`. The third argument to `readv` describes just that. We can observe in the program that we have specified an array of `struct iovec` which has two (2) elements. 
+
+10. We also see that readv is passed the pointer to the array of `struct iovec` as well as the number of elements that array holds, which is 2 in this case.
+
+11. After `read`ing the socket and storing the content in the buffer specified by `readv`'s argument, we first check the header which is created for experimentation purpose. For now, I've set to check if the version is equal to `1` AND protocol name is `UNP`. If either of them is found to be false, then the server sends the error response and prematurely terminates the socket using the `shutdown` system call as well followed by a log printed to the standard output of the server process. 
+
+12. If all of the above conditions are satisfied, then a log is printed to the standard output. Then the function `str_echo` is called which we have been using to echo out the data which was sent by the client to the server.
+
+Let's look at the implementation detail of the `client.c`:
+
+1. We first declare the structure to store the address and port of the server. For ensuring that the server is not initialized with garbage values, we use `bzero` function to zero out all the bytes in the structure. We also provide the server's address and server's port number.
+
+2. A socket is created using the `socket` system call. Then, we also declared another structure to hold the local address and local port number using the `getsockname` system call. We also log it out into the standard output.
+
+3. Next we use the `connect` system call to connect to the server through the structure we created before. Notice that the socket, by default, is a blocking one, meaning that `connect` will block the calling process before it returns. One could also use the `fcntl` or `ioctl` or `setsocketopt` (for socket only) system call to modify the socket descriptor to make it be non-blocking. The macro for non-blocking property is `O_NONBLOCK`.
+
+4. After successful connection, the socket defined earlier will now have a 5-tuple association. This means we can use the `getpeername` system call to access the name of the peer network address and the peer process number (peer here means the server).
+
+5. We also log out the local info (address and port) as well as peer info (address and port) after `connect`ing.
+
+6. Before calling the `str_cli` function, we first send the header information to the server to check if the server and the client are using the same protocol (UNP) and version number (1). This is done using the `writev` system call. Realize that `writev` is similar to `readv` which we have described above. I'm assuming the reader has understood the working of `readv` above, so won't be describing it here. If either of them are found to be mismatched, then the server sends an error message and `shutdown` the socket. If the client were to receive this error message, the client prints the error message and `shutdown`s the socket. Also notice that message for version number and protocol name are sent distinctly. I could have done it in one message, but wanted to do this quick and dirty. Hence, we first check the version number and later the protocol name. One last thing is that the shutdown function can fail, but no fail check for this system call is defined (in the scenario where version number or protocol name are found to be not same). I'm assuming that this won't fail, but it can, refer to `shutdown (2)` for more information.
+
+7. After all this is done and no version error or protocol name error exists, then the client runs the `str_cli` function, which we have previously seen the working of.
