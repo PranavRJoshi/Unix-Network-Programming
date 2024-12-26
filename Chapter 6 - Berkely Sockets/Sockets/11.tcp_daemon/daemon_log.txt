@@ -1,0 +1,6 @@
+this is the child process handling the client
+this is the child process handling the client
+this is the child process handling the client
+this is the child process handling the client
+this is the child process handling the client
+fd: 1 pid: 47471 message: this is the child process handling the client
