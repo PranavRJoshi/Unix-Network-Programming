@@ -18,4 +18,4 @@ Some changes made by me to the code fragment from the text includes:
 
 ## About the Book
 
-The book `Unix Network Programming` provides various case studies that showcase ~15,000 source code written in C (along with comments). The book is well crafted and describes various functionality provided by System V as well as 4.3BSD for network programming.
+The book `Unix Network Programming` provides various case studies that showcase ~15,000 source code written in C (along with comments). The book is well crafted and describes various functionality provided by System V as well as 4.3BSD for network programming. Unfortunately, W.R. Stevens is no longer with us, but his contribution still is of great use for many learners. To learn more about him, and check out [this website](http://kohala.com).
