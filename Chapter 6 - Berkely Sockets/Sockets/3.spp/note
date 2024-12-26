@@ -1,0 +1,3 @@
+This program, and the one in the `../idp` directory is done for illustration purpose only.
+
+One of the issues I have been facing regarding XNS protocol suite is the fact that the protocol suite is pretty old now and newer devices (including my laptop) have stopped providing support for this protocol suite. Although there exists the address family macro called `AF_NS` defined, its usage is still not supported (also the socket (2) man page prefers the usage of PF (Protocol Family) prefix rather than the AF (Address Family) prefix) and I got the error returned (EAFNOSUPPORT (47)) when attempting to create a socket.
