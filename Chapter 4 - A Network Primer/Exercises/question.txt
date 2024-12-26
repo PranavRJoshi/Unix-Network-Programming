@@ -1,0 +1,3 @@
+Exercise 4.1:
+Q. Draw a diagram of the local area network that you have access to. Include hosts, repeaters, bridges, routers and gateways. Indicate what equipment (token ring, Ethernet, etc.) is being used at the physical layer.
+A. The diagram is in the file `internetwork.png`, which not only contains the local area network, but also the connection with the Internet that we know today. Also, note that on my local area network, no repeaters or bridges are being used. I believe the router used today also acts as a gateway rather than just routing the packets to the Internet.
